@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { parse } from "url";
 import { pushLogsToLoki } from "./grafana";
-import { IncomingMessage, ServerResponse } from "http";
+import { ServerResponse } from "http";
 import { GetServerSidePropsContext } from "next";
 
-// Create a type that encompasses both API routes and getServerSideProps
 type LoggableRequest = NextApiRequest | GetServerSidePropsContext["req"];
 type LoggableResponse = NextApiResponse | ServerResponse;
 
@@ -13,28 +12,11 @@ export async function logServerStats(
   res: LoggableResponse
 ) {
   const start = Number(req.headers["x-request-start"]);
-  // let responseBody: any;
-
-  // Intercept res.json and res.send if available
-  // if ('json' in res && typeof res.json === 'function') {
-  //   const originalJson = res.json;
-  //   res.json = function (body: any) {
-  //     responseBody = body;
-  //     return originalJson.call(this, body);
-  //   };
-  // }
-
-  // if ('send' in res && typeof res.send === 'function') {
-  //   const originalSend = res.send;
-  //   res.send = function (body: any) {
-  //     responseBody = body;
-  //     return originalSend.call(this, body);
-  //   };
-  // }
 
   res.on("finish", async () => {
     const end = Date.now();
     let duration = null;
+
     if (!isNaN(start)) {
       duration = end - start;
     }
@@ -74,9 +56,9 @@ export async function logServerStats(
       {
         service: "archiverse-web",
         job: "logger",
-        level: level,
+        level,
       },
-      [`${JSON.stringify(logData)}`]
+      [JSON.stringify(logData)]
     );
   });
 }
